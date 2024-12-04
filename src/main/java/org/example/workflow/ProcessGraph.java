@@ -3,6 +3,7 @@ package org.example.workflow;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.traverse.TopologicalOrderIterator;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -10,12 +11,10 @@ import java.util.concurrent.*;
 public class ProcessGraph {
     private static final int MAX_CONCURRENT = 3;
     private final Graph<Integer, DefaultEdge> graph;
-    private final Map<Integer, CompletableFuture<Integer>> processResults;
     private final ExecutorService executorService;
 
     public ProcessGraph() {
         this.graph = new DefaultDirectedGraph<>(DefaultEdge.class);
-        this.processResults = new ConcurrentHashMap<>();
         this.executorService = Executors.newFixedThreadPool(MAX_CONCURRENT);
     }
 
@@ -28,45 +27,66 @@ public class ProcessGraph {
     }
 
     public Map<Integer, Integer> execute() throws ExecutionException, InterruptedException {
-        Map<Integer, Integer> results = new HashMap<>();
-        Set<Integer> completed = new HashSet<>();
-
-        while (completed.size() < graph.vertexSet().size()) {
-            Set<Integer> readyNodes = findReadyNodes(completed);
+        Map<Integer, Integer> results = new ConcurrentHashMap<>();
+        TopologicalOrderIterator<Integer, DefaultEdge> iterator = new TopologicalOrderIterator<>(graph);
+        
+        // 按层次分组存储节点
+        List<Set<Integer>> layers = new ArrayList<>();
+        Map<Integer, Integer> nodeToLayer = new HashMap<>();
+        
+        // 使用拓扑排序确定每个节点的层次
+        while (iterator.hasNext()) {
+            Integer node = iterator.next();
+            int layer = getNodeLayer(node, nodeToLayer);
             
-            // 并发处理准备好的节点
-            List<CompletableFuture<Void>> futures = new ArrayList<>();
-            for (Integer node : readyNodes) {
-                CompletableFuture<Integer> future = CompletableFuture.supplyAsync(
-                    () -> processNode(node),
-                    executorService
-                );
-                processResults.put(node, future);
-                futures.add(future.thenAccept(result -> results.put(node, result)));
+            if (layers.size() <= layer) {
+                layers.add(new HashSet<>());
             }
+            layers.get(layer).add(node);
+        }
 
-            // 等待当前批次完成
+        // 按层次顺序执行节点
+        for (Set<Integer> layerNodes : layers) {
+            List<CompletableFuture<Void>> futures = new ArrayList<>();
+            
+            // 同一层的节点可以并发执行
+            for (Integer node : layerNodes) {
+                CompletableFuture<Void> future = CompletableFuture.supplyAsync(
+                        () -> processNode(node),
+                        executorService
+                    )
+                    .thenAccept(result -> results.put(node, result));
+                futures.add(future);
+            }
+            
+            // 等待当前层的所有节点执行完成
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get();
-            completed.addAll(readyNodes);
         }
 
         executorService.shutdown();
         return results;
     }
 
-    private Set<Integer> findReadyNodes(Set<Integer> completed) {
-        Set<Integer> readyNodes = new HashSet<>();
-        for (Integer node : graph.vertexSet()) {
-            if (!completed.contains(node) && !processResults.containsKey(node)) {
-                boolean isReady = graph.incomingEdgesOf(node).stream()
-                    .map(graph::getEdgeSource)
-                    .allMatch(completed::contains);
-                if (isReady) {
-                    readyNodes.add(node);
-                }
-            }
+    private int getNodeLayer(Integer node, Map<Integer, Integer> nodeToLayer) {
+        if (nodeToLayer.containsKey(node)) {
+            return nodeToLayer.get(node);
         }
-        return readyNodes;
+
+        if (graph.inDegreeOf(node) == 0) {
+            nodeToLayer.put(node, 0);
+            return 0;
+        }
+
+        int maxPredecessorLayer = -1;
+        for (DefaultEdge edge : graph.incomingEdgesOf(node)) {
+            Integer predecessor = graph.getEdgeSource(edge);
+            maxPredecessorLayer = Math.max(maxPredecessorLayer, 
+                getNodeLayer(predecessor, nodeToLayer));
+        }
+
+        int layer = maxPredecessorLayer + 1;
+        nodeToLayer.put(node, layer);
+        return layer;
     }
 
     private Integer processNode(Integer node) {
