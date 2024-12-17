@@ -6,8 +6,6 @@ import com.grapecity.documents.excel.drawing.ChartType;
 import com.grapecity.documents.excel.drawing.IShape;
 import com.grapecity.documents.excel.drawing.RowCol;
 
-import java.util.GregorianCalendar;
-
 public class Main {
     public static void main(String[] args) {
         testlambda();
