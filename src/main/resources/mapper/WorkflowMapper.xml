@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.infrastructure.persistence.mapper.WorkflowMapper">
+    
+    <resultMap id="workflowMap" type="WorkflowEntity">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="definition" column="definition"/>
+        <result property="status" column="status"/>
+    </resultMap>
+    
+    <insert id="insert" parameterType="WorkflowEntity">
+        INSERT INTO workflows (id, name, definition, status)
+        VALUES (#{id}, #{name}, #{definition}, #{status})
+    </insert>
+    
+    <select id="findById" resultMap="workflowMap">
+        SELECT * FROM workflows WHERE id = #{id}
+    </select>
+    
+    <update id="update" parameterType="WorkflowEntity">
+        UPDATE workflows 
+        SET name = #{name},
+            definition = #{definition},
+            status = #{status}
+        WHERE id = #{id}
+    </update>
+    
+    <delete id="delete">
+        DELETE FROM workflows WHERE id = #{id}
+    </delete>
+</mapper> 

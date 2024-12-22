@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: data-processing-platform
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5432/data_processing
+    username: postgres
+    password: postgres
+    
+  mybatis:
+    mapper-locations: classpath:mapper/*.xml
+    type-aliases-package: org.example.infrastructure.persistence.entity
+    configuration:
+      map-underscore-to-camel-case: true
+
+server:
+  port: 8080 
