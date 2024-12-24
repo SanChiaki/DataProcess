@@ -1,0 +1,110 @@
+{
+    "id": "flow_001",
+    "name": "销售数据合并处理",
+    "description": "合并两个区域的销售数据并计算汇总",
+    "nodes": [
+      {
+        "id": "node_001",
+        "name": "北区销售数据",
+        "type": "EXCEL_INPUT",
+        "version": "1.0.0",
+        "config": {
+          "filePath": "/data/north_sales.xlsx",
+          "sheetName": "销售明细",
+          "range": "A1:H1000",
+          "headers": ["日期", "产品", "销售额", "数量"]
+        }
+      },
+      {
+        "id": "node_002",
+        "name": "南区销售数据",
+        "type": "EXCEL_INPUT",
+        "version": "1.0.0",
+        "config": {
+          "filePath": "/data/south_sales.xlsx",
+          "sheetName": "销售明细",
+          "range": "A1:H1000",
+          "headers": ["日期", "产品", "销售额", "数量"]
+        }
+      },
+      {
+        "id": "node_003",
+        "name": "数据合并",
+        "type": "MERGE",
+        "version": "1.0.0",
+        "config": {
+          "mergeType": "UNION",
+          "mappings": [
+            {
+              "sourceField": "日期",
+              "targetField": "sale_date"
+            },
+            {
+              "sourceField": "产品",
+              "targetField": "product"
+            },
+            {
+              "sourceField": "销售额",
+              "targetField": "amount"
+            },
+            {
+              "sourceField": "数量",
+              "targetField": "quantity"
+            }
+          ]
+        }
+      },
+      {
+        "id": "node_004",
+        "name": "导出结果",
+        "type": "EXCEL_OUTPUT",
+        "version": "1.0.0",
+        "config": {
+          "filePath": "/data/output/merged_sales.xlsx",
+          "sheetName": "合并销售数据",
+          "writeHeaders": true
+        }
+      }
+    ],
+    "edges": [
+      {
+        "sourceId": "node_001",
+        "targetId": "node_003",
+        "sourcePort": {
+          "id": "out_001",
+          "type": "OUTPUT"
+        },
+        "targetPort": {
+          "id": "in_001",
+          "type": "INPUT"
+        }
+      },
+      {
+        "sourceId": "node_002",
+        "targetId": "node_003",
+        "sourcePort": {
+          "id": "out_001",
+          "type": "OUTPUT"
+        },
+        "targetPort": {
+          "id": "in_002",
+          "type": "INPUT"
+        }
+      },
+      {
+        "sourceId": "node_003",
+        "targetId": "node_004",
+        "sourcePort": {
+          "id": "out_001",
+          "type": "OUTPUT"
+        },
+        "targetPort": {
+          "id": "in_001",
+          "type": "INPUT"
+        }
+      }
+    ],
+    "createTime": "2024-03-20T10:00:00Z",
+    "updateTime": "2024-03-20T10:00:00Z",
+    "status": "DRAFT"
+  }

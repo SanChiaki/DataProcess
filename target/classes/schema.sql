@@ -1,6 +1,0 @@
-CREATE TABLE IF NOT EXISTS workflows (
-    id VARCHAR(36) PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    definition JSONB NOT NULL,
-    status VARCHAR(20) NOT NULL
-); 
