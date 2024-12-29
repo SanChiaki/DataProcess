@@ -59,6 +59,11 @@
             <artifactId>poi-ooxml</artifactId>
             <version>${poi.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.grapecitysoft.documents</groupId>
+            <artifactId>gcexcel</artifactId>
+            <version>7.2.2</version>
+        </dependency>
 
         <!-- Utils -->
         <dependency>

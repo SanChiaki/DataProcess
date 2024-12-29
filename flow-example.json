@@ -1,68 +1,47 @@
 {
     "id": "flow_001",
-    "name": "销售数据合并处理",
-    "description": "合并两个区域的销售数据并计算汇总",
+    "name": "Excel Sheet合并流程",
+    "description": "合并Excel的两个Sheet页",
     "nodes": [
       {
         "id": "node_001",
-        "name": "北区销售数据",
+        "name": "Sheet1输入",
         "type": "EXCEL_INPUT",
         "version": "1.0.0",
         "config": {
-          "filePath": "/data/north_sales.xlsx",
-          "sheetName": "销售明细",
-          "range": "A1:H1000",
-          "headers": ["日期", "产品", "销售额", "数量"]
+          "filePath": "test.xlsx",
+          "sheetName": "Sheet1",
+          "range": "A1:D100"
         }
       },
       {
         "id": "node_002",
-        "name": "南区销售数据",
+        "name": "Sheet2输入",
         "type": "EXCEL_INPUT",
         "version": "1.0.0",
         "config": {
-          "filePath": "/data/south_sales.xlsx",
-          "sheetName": "销售明细",
-          "range": "A1:H1000",
-          "headers": ["日期", "产品", "销售额", "数量"]
+          "filePath": "test.xlsx",
+          "sheetName": "Sheet2",
+          "range": "A1:D100"
         }
       },
       {
         "id": "node_003",
-        "name": "数据合并",
-        "type": "MERGE",
+        "name": "Sheet合并",
+        "type": "EXCEL_SHEET_MERGE",
         "version": "1.0.0",
         "config": {
-          "mergeType": "UNION",
-          "mappings": [
-            {
-              "sourceField": "日期",
-              "targetField": "sale_date"
-            },
-            {
-              "sourceField": "产品",
-              "targetField": "product"
-            },
-            {
-              "sourceField": "销售额",
-              "targetField": "amount"
-            },
-            {
-              "sourceField": "数量",
-              "targetField": "quantity"
-            }
-          ]
+          "mergeType": "UNION"
         }
       },
       {
         "id": "node_004",
-        "name": "导出结果",
+        "name": "结果输出",
         "type": "EXCEL_OUTPUT",
         "version": "1.0.0",
         "config": {
-          "filePath": "/data/output/merged_sales.xlsx",
-          "sheetName": "合并销售数据",
-          "writeHeaders": true
+          "filePath": "result.xlsx",
+          "sheetName": "合并结果"
         }
       }
     ],
@@ -103,8 +82,5 @@
           "type": "INPUT"
         }
       }
-    ],
-    "createTime": "2024-03-20T10:00:00Z",
-    "updateTime": "2024-03-20T10:00:00Z",
-    "status": "DRAFT"
+    ]
   }
