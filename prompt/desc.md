@@ -17,3 +17,7 @@
 port可以理解为params吗？
 ---
 论证一下区分port和params的必要性？我感觉port也可以被视作一种params
+
+---
+这段测试用例描写了GCExcel是怎么操作两个Sheet页合并的，请以这个为依据实现一个Sheet页合并的Operation
+我考虑用jgrapht来实现拓扑排序，引入这个三方库是不是太重了？
