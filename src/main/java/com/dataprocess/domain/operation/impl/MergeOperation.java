@@ -13,8 +13,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MergeOperation implements Operation {
+
+    private static final Logger log = LoggerFactory.getLogger(MergeOperation.class);
     private final String id;
     private final Set<Port> inputPorts;
     private final Set<Port> outputPorts;
@@ -46,6 +50,9 @@ public class MergeOperation implements Operation {
         // 定义输出端口
         this.outputPorts = new HashSet<>();
         this.outputPorts.add(new Port("merged", PortType.OUTPUT));
+        
+        // 初始化配置
+        this.config = new HashMap<>();
     }
 
     @Override
@@ -78,7 +85,7 @@ public class MergeOperation implements Operation {
         // 从配置中获取参数
         String outputSheetName = (String) config.getOrDefault(Config.OUTPUT_SHEET_NAME, "merged");
         boolean skipEmptyRows = (boolean) config.getOrDefault(Config.SKIP_EMPTY_ROWS, false);
-        
+        // TODO: 当前合并策略为识别相同列进行合并，未添加映射关系
         try {
             // 获取所有输入Sheet
             List<Sheet> sheets = inputs.get(getPortByName("sheets"));
@@ -126,6 +133,7 @@ public class MergeOperation implements Operation {
             return Collections.singletonList(new Sheet(resultSheet));
             
         } catch (Exception e) {
+            log.error("Failed to merge sheets", e);
             throw new OperationException(id, OperationException.FailureType.EXECUTION_ERROR, "Failed to merge sheets");
         }
     }

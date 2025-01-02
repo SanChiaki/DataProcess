@@ -27,6 +27,13 @@ public class Workbook {
     
     public Sheet addSheet(String name) {
         IWorksheet worksheet = workbook.getWorksheets().add();
+        worksheet.setName(name);
+        return new Sheet(worksheet);
+    }
+
+    public Sheet addSheet(String name, Sheet sheet) {
+        IWorksheet worksheet = sheet.getWorksheet().copy(workbook);
+        worksheet.setName(name);
         return new Sheet(worksheet);
     }
     
