@@ -1,6 +1,6 @@
 package com.dataprocess.test;
 
-import com.dataprocess.domain.graph.Port;
+import com.dataprocess.domain.operation.Port;
 import com.dataprocess.domain.operation.Operation;
 import com.dataprocess.domain.operation.OperationConstants;
 import com.dataprocess.domain.operation.OperationFactory;

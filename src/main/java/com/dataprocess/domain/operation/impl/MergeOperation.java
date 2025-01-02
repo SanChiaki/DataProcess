@@ -1,7 +1,7 @@
 package com.dataprocess.domain.operation.impl;
 
-import com.dataprocess.domain.graph.Port;
-import com.dataprocess.domain.graph.Port.PortType;
+import com.dataprocess.domain.operation.Port;
+import com.dataprocess.domain.operation.Port.PortType;
 import com.dataprocess.domain.operation.Operation;
 import com.dataprocess.domain.operation.OperationException;
 import com.dataprocess.domain.sheet.Sheet;

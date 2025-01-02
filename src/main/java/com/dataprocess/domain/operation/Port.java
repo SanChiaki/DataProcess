@@ -1,4 +1,4 @@
-package com.dataprocess.domain.graph;
+package com.dataprocess.domain.operation;
 
 public class Port {
     private final String name;
