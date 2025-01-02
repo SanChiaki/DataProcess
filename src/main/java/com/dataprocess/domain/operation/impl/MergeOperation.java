@@ -1,6 +1,5 @@
 package com.dataprocess.domain.operation.impl;
 
-import com.dataprocess.domain.common.Version;
 import com.dataprocess.domain.graph.Port;
 import com.dataprocess.domain.graph.Port.PortType;
 import com.dataprocess.domain.operation.Operation;
@@ -8,6 +7,8 @@ import com.dataprocess.domain.operation.OperationException;
 import com.dataprocess.domain.sheet.Sheet;
 import com.grapecity.documents.excel.*;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +18,24 @@ public class MergeOperation implements Operation {
     private final String id;
     private final Set<Port> inputPorts;
     private final Set<Port> outputPorts;
-
+    private Map<String, Object> config;  // 存储配置
+    
+    public static class Config {
+        public static final String OUTPUT_SHEET_NAME = "outputSheetName";
+        public static final String SKIP_EMPTY_ROWS = "skipEmptyRows";
+        // ... 其他配置项
+    }
+    
+    @Override
+    public void configure(Map<String, Object> config) {
+        this.config = new HashMap<>(config);
+    }
+    
+    @Override
+    public Map<String, Object> getConfig() {
+        return Collections.unmodifiableMap(config);
+    }
+    
     public MergeOperation(String id) {
         this.id = id;
         
@@ -56,10 +74,14 @@ public class MergeOperation implements Operation {
     }
 
     @Override
-    public Sheet execute(Map<Port, Sheet> inputs) throws OperationException {
+    public List<Sheet> execute(Map<Port, List<Sheet>> inputs) throws OperationException {
+        // 从配置中获取参数
+        String outputSheetName = (String) config.getOrDefault(Config.OUTPUT_SHEET_NAME, "merged");
+        boolean skipEmptyRows = (boolean) config.getOrDefault(Config.SKIP_EMPTY_ROWS, false);
+        
         try {
             // 获取所有输入Sheet
-            List<Sheet> sheets = (List<Sheet>) inputs.get(getPortByName("sheets"));
+            List<Sheet> sheets = inputs.get(getPortByName("sheets"));
             if (sheets == null || sheets.isEmpty()) {
                 throw new OperationException(id, OperationException.FailureType.INVALID_INPUT, "No input sheets provided");
             }
@@ -101,7 +123,7 @@ public class MergeOperation implements Operation {
                 lastRow += currentSheet.getUsedRange().getRows().getCount() - 1;
             }
 
-            return new Sheet(resultSheet);
+            return Collections.singletonList(new Sheet(resultSheet));
             
         } catch (Exception e) {
             throw new OperationException(id, OperationException.FailureType.EXECUTION_ERROR, "Failed to merge sheets");

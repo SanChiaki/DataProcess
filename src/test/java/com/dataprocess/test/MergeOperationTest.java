@@ -82,21 +82,21 @@ public class MergeOperationTest {
         );
         
         // 3. 准备输入数据
-        Map<Port, Sheet> inputs = new HashMap<>();
+        Map<Port, List<Sheet>> inputs = new HashMap<>();
         inputs.put(mergeOperation.getPortByName("sheets"), sheetsToMerge);
         
         // 4. 执行合并
-        Sheet mergedSheet = mergeOperation.execute(inputs);
+        Sheet mergedSheet = mergeOperation.execute(inputs).get(0);
         
         // 5. 保存结果
-        Workbook resultWorkbook = workbookFactory.createEmpty();
-        resultWorkbook.addSheet("merged", mergedSheet);
-        resultWorkbook.save("src/test/resources/merge-result.xlsx");
+        // Workbook resultWorkbook = workbookFactory.createEmpty();
+        // resultWorkbook.addSheet("merged", mergedSheet);
+        sourceWorkbook.save("src/test/resources/merge-result.xlsx");
         
         // 6. 验证结果
         assertNotNull(mergedSheet);
-        assertEquals(4, mergedSheet.getRowCount(), "应该有4行数据（1个表头+3行数据）");
-        assertEquals(3, mergedSheet.getColumnCount(), "应该有3列数据");
+        assertEquals(4, mergedSheet.getWorksheet().getRowCount(), "应该有4行数据（1个表头+3行数据）");
+        assertEquals(3, mergedSheet.getWorksheet().getColumnCount(), "应该有3列数据");
         
         // 验证表头
         assertEquals("姓名", mergedSheet.getValue(0, 0));

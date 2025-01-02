@@ -1,10 +1,9 @@
 package com.dataprocess.domain.operation;
 
-import com.dataprocess.domain.common.Version;
 import com.dataprocess.domain.graph.Port;
 import com.dataprocess.domain.sheet.Sheet;
-import com.dataprocess.domain.operation.OperationException;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -15,5 +14,9 @@ public interface Operation {
     Set<Port> getInputPorts();
     Set<Port> getOutputPorts();
     Port getPortByName(String name);
-    Sheet execute(Map<Port, Sheet> inputs) throws OperationException;
+    
+    void configure(Map<String, Object> config);
+    Map<String, Object> getConfig();
+    
+    List<Sheet> execute(Map<Port, List<Sheet>> inputs) throws OperationException;
 } 

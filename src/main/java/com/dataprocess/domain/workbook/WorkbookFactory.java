@@ -8,7 +8,8 @@ public class WorkbookFactory {
     
     private synchronized void initializeIfNeeded() {
         if (!initialized) {
-            Workbook.SetLicenseKey(LICENSE_KEY);
+//            有可用Key时启用
+//            Workbook.SetLicenseKey(LICENSE_KEY);
             initialized = true;
         }
     }
