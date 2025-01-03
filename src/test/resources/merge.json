@@ -1,0 +1,95 @@
+{
+    "id": "merge_process_001",
+    "name": "销售数据合并流程",
+    "description": "合并南区和北区销售数据",
+    "version": "1.0",
+    "nodes": [
+      {
+        "id": "input_node_1",
+        "type": "INPUT",
+        "name": "南区销售数据",
+        "config": {
+          "sheetName": "南区销售表",
+          "filePath": "/data/south_sales.xlsx"
+        }
+      },
+      {
+        "id": "input_node_2",
+        "type": "INPUT",
+        "name": "北区销售数据",
+        "config": {
+          "sheetName": "北区销售表",
+          "filePath": "/data/north_sales.xlsx"
+        }
+      },
+      {
+        "id": "merge_node_1",
+        "type": "MERGE",
+        "name": "区域数据合并",
+        "version": "1.0",
+        "config": {
+          "mergeType": "APPEND",
+          "skipHeaders": true,
+          "mappings": [
+            {
+              "sourceColumn": "销售日期",
+              "targetColumn": "销售日期"
+            },
+            {
+              "sourceColumn": "产品编码",
+              "targetColumn": "产品编码"
+            },
+            {
+              "sourceColumn": "销售金额",
+              "targetColumn": "销售金额"
+            }
+          ]
+        }
+      },
+      {
+        "id": "output_node_1",
+        "type": "OUTPUT",
+        "name": "合并后的销售数据",
+        "config": {
+          "sheetName": "全区域销售表",
+          "filePath": "/data/merged_sales.xlsx"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": {
+          "nodeId": "sheet_1",
+          "portId": "output"
+        },
+        "to": {
+          "nodeId": "merge_1",
+          "portId": "input_1"
+        }
+      },
+      {
+        "from": {
+          "nodeId": "sheet_2",
+          "portId": "output"
+        },
+        "to": {
+          "nodeId": "merge_1",
+          "portId": "input_2"
+        }
+      },
+      {
+        "from": {
+          "nodeId": "merge_1",
+          "portId": "output_1"
+        },
+        "to": {
+          "nodeId": "result_sheet",
+          "portId": "input"
+        }
+      }
+    ],
+    "executionConfig": {
+      "maxConcurrency": 2,
+      "timeout": 3600
+    }
+  }
