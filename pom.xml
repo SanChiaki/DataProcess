@@ -62,7 +62,7 @@
         <dependency>
             <groupId>com.grapecitysoft.documents</groupId>
             <artifactId>gcexcel</artifactId>
-            <version>7.2.2</version>
+            <version>7.1.0</version>
         </dependency>
 
         <!-- Utils -->

@@ -1,0 +1,95 @@
+{
+    "id": "merge_task_001",
+    "name": "合并销售数据",
+    "description": "合并2023年第一季度各区域销售数据",
+    "nodes": [
+      {
+        "id": "sheet_1",
+        "type": "SHEET",
+        "name": "华东区销售",
+        "config": {
+          "workbookPath": "/data/east_sales.xlsx",
+          "sheetName": "Q1销售表"
+        }
+      },
+      {
+        "id": "sheet_2", 
+        "type": "SHEET",
+        "name": "华南区销售",
+        "config": {
+          "workbookPath": "/data/south_sales.xlsx",
+          "sheetName": "Q1销售表"
+        }
+      },
+      {
+        "id": "merge_1",
+        "type": "OPERATION",
+        "name": "合并销售数据",
+        "operationType": "MERGE",
+        "version": "1.0",
+        "ports": {
+          "inputs": [
+            {
+              "id": "input_1",
+              "name": "华东区数据输入"
+            },
+            {
+              "id": "input_2",
+              "name": "华南区数据输入"
+            }
+          ],
+          "outputs": [
+            {
+              "id": "output_1",
+              "name": "合并后数据"
+            }
+          ]
+        }
+      },
+      {
+        "id": "result_sheet",
+        "type": "SHEET",
+        "name": "合并结果",
+        "config": {
+          "workbookPath": "/data/merged_sales.xlsx",
+          "sheetName": "Q1区域销售汇总"
+        }
+      }
+    ],
+    "connections": [
+      {
+        "from": {
+          "nodeId": "sheet_1",
+          "portId": "output"
+        },
+        "to": {
+          "nodeId": "merge_1",
+          "portId": "input_1"
+        }
+      },
+      {
+        "from": {
+          "nodeId": "sheet_2",
+          "portId": "output"
+        },
+        "to": {
+          "nodeId": "merge_1",
+          "portId": "input_2"
+        }
+      },
+      {
+        "from": {
+          "nodeId": "merge_1",
+          "portId": "output_1"
+        },
+        "to": {
+          "nodeId": "result_sheet",
+          "portId": "input"
+        }
+      }
+    ],
+    "executionConfig": {
+      "maxConcurrency": 2,
+      "timeoutSeconds": 1800
+    }
+  }

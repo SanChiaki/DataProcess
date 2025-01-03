@@ -1,148 +1,159 @@
 package com.dataprocess.domain.operation.impl;
 
-import com.dataprocess.domain.operation.Port;
-import com.dataprocess.domain.operation.Port.PortType;
 import com.dataprocess.domain.operation.Operation;
 import com.dataprocess.domain.operation.OperationException;
+import com.dataprocess.domain.operation.Port;
+import com.dataprocess.domain.operation.Port.PortType;
 import com.dataprocess.domain.sheet.Sheet;
+import lombok.Getter;
+
+import java.util.*;
+
+// 添加GCExcel相关的导入
 import com.grapecity.documents.excel.*;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class MergeOperation implements Operation {
-
-    private static final Logger log = LoggerFactory.getLogger(MergeOperation.class);
+    @Getter
     private final String id;
-    private final Set<Port> inputPorts;
-    private final Set<Port> outputPorts;
-    private Map<String, Object> config;  // 存储配置
     
-    public static class Config {
-        public static final String OUTPUT_SHEET_NAME = "outputSheetName";
-        public static final String SKIP_EMPTY_ROWS = "skipEmptyRows";
-        // ... 其他配置项
-    }
+    @Getter
+    private final String type = "MERGE";
     
-    @Override
-    public void configure(Map<String, Object> config) {
-        this.config = new HashMap<>(config);
-    }
+    @Getter
+    private final String version = "1.0";
     
-    @Override
-    public Map<String, Object> getConfig() {
-        return Collections.unmodifiableMap(config);
-    }
+    // 输入端口：支持多个输入
+    private final Port mainInput;
+    private final Port secondaryInput;
+    
+    // 输出端口
+    private final Port output;
     
     public MergeOperation(String id) {
         this.id = id;
-        
-        // 定义一个数组输入端口，用于接收多个Sheet
-        this.inputPorts = new HashSet<>();
-        this.inputPorts.add(new Port("sheets", PortType.INPUT_ARRAY));
-        
-        // 定义输出端口
-        this.outputPorts = new HashSet<>();
-        this.outputPorts.add(new Port("merged", PortType.OUTPUT));
-        
-        // 初始化配置
-        this.config = new HashMap<>();
+        this.mainInput = new Port("main", PortType.INPUT);
+        this.secondaryInput = new Port("secondary", PortType.INPUT_ARRAY);
+        this.output = new Port("output", PortType.OUTPUT);
     }
-
-    @Override
-    public String getId() {
-        return id;
-    }
-
-    @Override
-    public String getType() {
-        return "merge";
-    }
-
-    @Override
-    public String getVersion() {
-        return "1.0";
-    }
-
+    
     @Override
     public Set<Port> getInputPorts() {
-        return inputPorts;
+        return new HashSet<>(Arrays.asList(mainInput, secondaryInput));
     }
-
+    
     @Override
     public Set<Port> getOutputPorts() {
-        return outputPorts;
+        return Collections.singleton(output);
     }
-
+    
     @Override
-    public List<Sheet> execute(Map<Port, List<Sheet>> inputs) throws OperationException {
-        // 从配置中获取参数
-        String outputSheetName = (String) config.getOrDefault(Config.OUTPUT_SHEET_NAME, "merged");
-        boolean skipEmptyRows = (boolean) config.getOrDefault(Config.SKIP_EMPTY_ROWS, false);
-        // TODO: 当前合并策略为识别相同列进行合并，未添加映射关系
-        try {
-            // 获取所有输入Sheet
-            List<Sheet> sheets = inputs.get(getPortByName("sheets"));
-            if (sheets == null || sheets.isEmpty()) {
-                throw new OperationException(id, OperationException.FailureType.INVALID_INPUT, "No input sheets provided");
-            }
-
-            // 使用第一个Sheet作为基础
-            Sheet baseSheet = sheets.get(0);
-            IWorksheet resultSheet = baseSheet.getWorksheet();
-            IRange baseHeaderRange = resultSheet.getRange("1:1").getUsedRange();
+    public void execute(Map<Port, List<Sheet>> inputData) {
+        // 1. 获取输入数据
+        List<Sheet> mainSheets = inputData.get(mainInput);
+        List<Sheet> secondarySheets = inputData.get(secondaryInput);
+        
+        if (mainSheets == null || mainSheets.isEmpty()) {
+            throw new OperationException("Main input is required");
+        }
+        
+        // 2. 执行合并
+        Sheet mergedSheet = mergeSheets(mainSheets.get(0), secondarySheets);
+        
+        // 3. 设置输出
+        output.setData(Collections.singletonList(mergedSheet));
+    }
+    
+    private Sheet mergeSheets(Sheet mainSheet, List<Sheet> secondarySheets) {
+        if (secondarySheets == null || secondarySheets.isEmpty()) {
+            return mainSheet;
+        }
+        
+        IWorksheet resultSheet = mainSheet.getWorksheet();
+        IRange mainHeaderRange = resultSheet.getRange("1:1").getUsedRange();
+        
+        // 从第一行开始追加数据
+        int currentRow = resultSheet.getUsedRange().getRow() + 
+                        resultSheet.getUsedRange().getRows().getCount();
+        
+        // 合并每个辅助Sheet
+        for (Sheet secondarySheet : secondarySheets) {
+            IWorksheet worksheet = secondarySheet.getWorksheet();
+            IRange headerRange = worksheet.getRange("1:1").getUsedRange();
             
-            // 从第二个Sheet开始合并
-            int lastRow = resultSheet.getUsedRange().getRow() + 
-                         resultSheet.getUsedRange().getRows().getCount();
-
-            for (int i = 1; i < sheets.size(); i++) {
-                IWorksheet currentSheet = sheets.get(i).getWorksheet();
-                IRange currentHeaderRange = currentSheet.getRange("1:1").getUsedRange();
-
-                // 遍历当前Sheet的列名
-                for (int col2 = 0; col2 < currentHeaderRange.getColumns().getCount(); col2++) {
-                    String columnName2 = currentHeaderRange.get(col2).getText();
-
-                    // 在基础Sheet中查找匹配的列名
-                    for (int col1 = 0; col1 < baseHeaderRange.getColumns().getCount(); col1++) {
-                        String columnName1 = baseHeaderRange.get(col1).getText();
-
-                        if (columnName1.equals(columnName2)) {
-                            // 获取当前Sheet的整列数据（排除首行）
-                            IRange sourceColumn = currentSheet.getRange(1, col2, 
-                                currentSheet.getUsedRange().getRows().getCount() - 1, 1);
-
-                            // 将数据复制到结果Sheet的对应列
-                            sourceColumn.copy(resultSheet.getRange(lastRow, col1));
-                            break;
-                        }
-                    }
+            // 构建列映射关系
+            Map<Integer, Integer> columnMapping = buildColumnMapping(
+                mainHeaderRange, headerRange);
+            
+            // 获取数据范围（不包括表头）
+            IRange dataRange = worksheet.getUsedRange()
+                .offset(1, 0, worksheet.getUsedRange().getRows().getCount() - 1, 
+                       headerRange.getColumns().getCount());
+            
+            // 复制数据
+            copyData(dataRange, resultSheet, currentRow, columnMapping);
+            
+            // 更新下一次追加的起始行
+            currentRow += dataRange.getRows().getCount();
+        }
+        
+        return new Sheet(resultSheet);
+    }
+    
+    private Map<Integer, Integer> buildColumnMapping(IRange mainHeader, IRange secondaryHeader) {
+        Map<Integer, Integer> mapping = new HashMap<>();
+        
+        // 遍历次要表头的每一列
+        for (int srcCol = 0; srcCol < secondaryHeader.getColumns().getCount(); srcCol++) {
+            String columnName = secondaryHeader.get(0, srcCol).getText();
+            
+            // 在主表头中查找匹配的列
+            for (int destCol = 0; destCol < mainHeader.getColumns().getCount(); destCol++) {
+                if (mainHeader.get(0, destCol).getText().equals(columnName)) {
+                    mapping.put(srcCol, destCol);
+                    break;
                 }
-
-                // 更新下一次追加的起始行
-                lastRow += currentSheet.getUsedRange().getRows().getCount() - 1;
             }
-
-            return Collections.singletonList(new Sheet(resultSheet));
-            
-        } catch (Exception e) {
-            log.error("Failed to merge sheets", e);
-            throw new OperationException(id, OperationException.FailureType.EXECUTION_ERROR, "Failed to merge sheets");
+        }
+        
+        return mapping;
+    }
+    
+    private void copyData(IRange sourceRange, IWorksheet targetSheet, 
+                         int targetStartRow, Map<Integer, Integer> columnMapping) {
+        // 遍历源数据的每一行
+        for (int row = 0; row < sourceRange.getRows().getCount(); row++) {
+            // 遍历列映射
+            for (Map.Entry<Integer, Integer> entry : columnMapping.entrySet()) {
+                int srcCol = entry.getKey();
+                int destCol = entry.getValue();
+                
+                // 获取源单元格的值和格式
+                IRange sourceCell = sourceRange.get(row, srcCol);
+                IRange targetCell = targetSheet.getRange(targetStartRow + row, destCol);
+                
+                // 复制值和格式
+                copyCell(sourceCell, targetCell);
+            }
         }
     }
-
-    @Override
-    public Port getPortByName(String name) {
-        return inputPorts.stream()
-                .filter(p -> p.getName().equals(name))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Port not found: " + name));
+    
+    private void copyCell(IRange source, IRange target) {
+        // 复制值
+        if (source.getValue() != null) {
+            target.setValue(source.getValue());
+        }
+        
+        // 复制格式
+        target.setNumberFormat(source.getNumberFormat());
+        target.setHorizontalAlignment(source.getHorizontalAlignment());
+        target.setVerticalAlignment(source.getVerticalAlignment());
+        
+        // 复制字体设置
+        IFont sourceFont = source.getFont();
+        IFont targetFont = target.getFont();
+        targetFont.setName(sourceFont.getName());
+        targetFont.setSize(sourceFont.getSize());
+        targetFont.setBold(sourceFont.getBold());
+        targetFont.setItalic(sourceFont.getItalic());
     }
 } 
